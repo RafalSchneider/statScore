@@ -1,180 +1,60 @@
-# Football Events Application
+# StatScoreApp – Installation & Usage Guide
 
-Simple application for handling football events - recruitment task.
-
-## Acceptance Criteria
-
-The following business requirements must be met by the solution:
-
-### Core business requirements
-
--   [ ] System accurately logs and updates statistics upon receiving a **goal** event, including details such as scorer, assisting player, team, minute, and match ID.
--   [ ] System accurately logs and updates records upon receiving a **foul** event, including details such as player at fault, affected player, team, match ID, and precise time of the foul.
--   [ ] All event data is permanently stored and retrievable
--   [ ] Relevant statistics are calculated and maintained for both event types
--   [ ] Clients receive information about all events in real-time
--   [ ] Data integrity is maintained at all times
--   [ ] Historical data is preserved and accessible
--   [ ] System can handle high volume of events
-
-### Client communication requirements
-
--   [ ] All clients receive event notifications
--   [ ] Information is delivered in a timely manner
--   [ ] Communication is reliable and consistent
-
-### Recruitment requirements
-
--   [ ] The solution should be provided as a GitHub repository at new branch with at least three meaningful commits
--   [ ] Some kind of abstraction is allowed to demonstrate the solution over a fully functioning application
--   [ ] Try to devote no more than 3 hours to solving the problem - anything you don't have time to do can be written as a plan for further action
--   [ ] Try not to use AI tools. If you do - write down how you use it
--   [ ] The solution presented is your colleague's PoC and is not a final contract for storing and exchanging data. If you believe the current implementation might be different, please include this in your changes
--   [ ] You have full responsibility and influence over the final solution; the PoC is just a teaser – show off your skills
+Recruitment task prototype for StatScore: a Laravel application demonstrating handling of football (soccer) events (fouls, goals), real-time statistics updates, and Server-Sent Events (SSE) streaming.
 
 ## Requirements
 
--   Docker
--   Docker Compose
+- Docker + Docker Desktop (recommended via Laravel Sail)
+- Git
+- (Optional) Local Composer – if you prefer not to rely only on the container
 
-## Installation and Setup
+## Quick Start (Docker / Sail)
 
-1. Build and run the container:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/RafalSchneider/statScore.git
+   cd StatScoreApp
+   ```
+2. Create the `.env` file:
+   ```bash
+   copy .env.example .env  
+   ```
+3. (Optional) Change the application port in `.env` via `APP_PORT=8080` if port 80 is busy.
+4. Start containers:
+   ```bash
+   docker compose up -d
+   ```
+5. Install dependencies & prepare the app (inside the container):
+   ```bash
+   docker compose exec laravel.test composer install
+   docker compose exec laravel.test php artisan key:generate
+   docker compose exec laravel.test php artisan migrate
 
-```bash
-docker compose up --build -d
-```
+   ```
+6. Application available at: `http://localhost` (or chosen port). API lives under `/api` prefix.
+7. (Queue) Start a worker to process event jobs:
+   ```bash
+   docker compose exec laravel.test php artisan queue:listen --queue=events --tries=1
+   # Alternatively: docker compose exec laravel.test php artisan horizon
+   ```
 
-2. Build and run the container:
+## API Endpoints
 
-```bash
-docker exec -it football_events_app composer install
-```
+Prefix: `/api`
 
-3. The application will be available at: `http://localhost:8000`
+- POST `/api/event` – register an event (foul / goal)
+- GET `/api/events` – list events (filters: `match_id`, `team_id`, `type`, `player`, `per_page`)
+- GET `/api/events/{id}` – single event
+- GET `/api/statistics?match_id=...&team_id=...` – stats for one team
+- GET `/api/statistics?match_id=...` – stats for all teams in a match
+- GET `/api/events-stream` – SSE stream of last and new events
 
-## Usage
-
-### Foul Event
-
-Send a POST request with a foul event:
-
-```bash
-curl -X POST http://localhost:8000/event \
-  -H "Content-Type: application/json" \
-  -d '{"type": "foul", "player": "William Saliba", "team_id": "arsenal", "match_id": "m1", "minute": 45, "second": 34}'
-```
-
-### Example Response
-
-Both events return a similar response structure:
-
-```json
-{
-    "status": "success",
-    "message": "Event saved successfully",
-    "event": {
-        "type": "foul",
-        "timestamp": 1729599123,
-        "data": {
-            "type": "foul",
-            "player": "William Saliba",
-            "team_id": "arsenal",
-            "match_id": "m1",
-            "minute": 45,
-            "second": 34
-        }
-    }
-}
-```
-
-### Statistics Endpoint
-
-Get team statistics for a specific match:
-
-```bash
-curl "http://localhost:8000/statistics?match_id=m1&team_id=arsenal"
-```
-
-Get all team statistics for a match:
-
-```bash
-curl "http://localhost:8000/statistics?match_id=m1"
-```
-
-Example response:
-
-```json
-{
-    "match_id": "m1",
-    "team_id": "arsenal",
-    "statistics": {
-        "fouls": 2
-    }
-}
-```
-
-Foul events automatically update team statistics (fouls counter) for the specified team in the given match.
 
 ## Tests
-
-### PHPUnit Tests
-
-Run PHPUnit tests inside the container:
-
+Run all tests inside Docker:
 ```bash
-docker exec -it football_events_app vendor/bin/phpunit tests
+docker compose exec laravel.test php artisan test
 ```
 
-Or after entering the container:
-
-```bash
-docker exec -it football_events_app bash
-vendor/bin/phpunit tests
-```
-
-### Codeception API Tests
-
-Run Codeception API tests for comprehensive endpoint testing:
-
-```bash
-docker exec -it football_events_app vendor/bin/codecept run Api
-```
-
-Run all Codeception tests:
-
-```bash
-docker exec -it football_events_app vendor/bin/codecept run
-```
-
-### Test Coverage
-
-The project includes:
-
--   **Unit tests** (PHPUnit): Test individual classes and methods
--   **API tests** (Codeception): Test HTTP endpoints and responses
--   **Integration tests**: Test complete workflows including statistics tracking
-
-## Project Structure
-
-```
-.
-├── Dockerfile
-├── docker-compose.yml
-├── composer.json
-├── phpunit.xml
-├── public/
-│   └── index.php          # Application entry point
-├── src/
-│   ├── EventHandler.php      # Event handling
-│   ├── FileStorage.php       # File storage
-│   └── StatisticsManager.php # Statistics management
-├── tests/
-│   ├── Unit/                 # PHPUnit tests
-|   |   └── EventHandlerTest.php
-│   ├── Api/                  # Codeception API tests
-│   │   ├── EventApiCest.php
-│   │   └── StatisticsApiCest.php
-│   └── Support/              # Test helpers
-└── storage/                  # Files with saved events and statistics
-```
+### AI Disclaimer
+Tests were generated / assisted by AI.
