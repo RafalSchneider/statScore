@@ -17,17 +17,12 @@ class GoalEventHandler implements EventHandler
                 'match_id' => $payload['match_id'],
                 'team_id' => $payload['team_id'],
             ],
-            [
-                'fouls' => 0,
-                'goals' => 0,
-            ]
+            ['stats' => []]
         );
 
-        if (method_exists($stat, 'increment')) {
-            $stat->increment('goals');
-        } else {
-            $stat->goals = ($stat->goals ?? 0) + 1;
-            $stat->save();
-        }
+        $stats = $stat->stats ?? [];
+        $stats['goals'] = ($stats['goals'] ?? 0) + 1;
+        $stat->stats = $stats;
+        $stat->save();
     }
 }

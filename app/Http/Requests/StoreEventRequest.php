@@ -17,6 +17,7 @@ class StoreEventRequest extends FormRequest
         $base = [
             'type' => 'required|string|in:foul,goal',
             'data' => 'sometimes|array',
+            'event_uuid' => 'sometimes|string|uuid',
         ];
 
         $foulSpecific = [];
@@ -47,9 +48,14 @@ class StoreEventRequest extends FormRequest
 
     public function validatedPayload(): array
     {
+        $validated = $this->validated();
+        $eventUuid = $validated['event_uuid'] ?? null;
+        unset($validated['event_uuid']);
+
         return [
             'type' => $this->input('type'),
-            'payload' => $this->validated(),
+            'payload' => $validated,
+            'event_uuid' => $eventUuid,
         ];
     }
 }

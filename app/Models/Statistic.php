@@ -8,6 +8,10 @@ class Statistic extends Model
     protected $fillable = [
         'match_id',
         'team_id',
-        'fouls',
+        'stats',
+    ];
+
+    protected $casts = [
+        'stats' => 'array',
     ];
 }

@@ -11,8 +11,9 @@ class CreateStatisticsTable extends Migration
             $table->id();
             $table->string('match_id');
             $table->string('team_id');
-            $table->integer('fouls')->default(0);
+            $table->json('stats')->nullable();
             $table->timestamps();
+            $table->unique(['match_id', 'team_id']);
         });
     }
 

@@ -10,9 +10,12 @@ class CreateEventsTable extends Migration
         Schema::create('events', function (Blueprint $table) {
             $table->id();
             $table->string('type');
+            $table->uuid('event_uuid')->nullable(); // idempotency key
             $table->timestamp('timestamp');
             $table->json('data');
             $table->timestamps();
+            $table->index(['type', 'timestamp']);
+            $table->index(['event_uuid']);
         });
     }
 

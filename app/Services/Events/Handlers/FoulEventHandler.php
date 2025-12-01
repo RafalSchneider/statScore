@@ -17,9 +17,12 @@ class FoulEventHandler implements EventHandler
                 'match_id' => $payload['match_id'],
                 'team_id' => $payload['team_id'],
             ],
-            ['fouls' => 0]
+            ['stats' => []]
         );
 
-        $stat->increment('fouls');
+        $stats = $stat->stats ?? [];
+        $stats['fouls'] = ($stats['fouls'] ?? 0) + 1;
+        $stat->stats = $stats;
+        $stat->save();
     }
 }

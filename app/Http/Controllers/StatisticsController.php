@@ -20,14 +20,10 @@ class StatisticsController extends Controller
                 ->where('team_id', $teamId)
                 ->first();
 
-            $fouls = $stat ? $stat->fouls : 0;
-
             return response()->json([
                 'match_id' => $matchId,
                 'team_id' => $teamId,
-                'statistics' => [
-                    'fouls' => $fouls
-                ]
+                'statistics' => $stat?->stats ?? []
             ]);
         } else {
             $stats = Statistic::where('match_id', $matchId)->get();
@@ -35,7 +31,7 @@ class StatisticsController extends Controller
             $formattedStats = $stats->map(function ($stat) {
                 return [
                     'team_id' => $stat->team_id,
-                    'fouls' => $stat->fouls
+                    'stats' => $stat->stats ?? []
                 ];
             });
 
